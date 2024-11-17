@@ -3,13 +3,6 @@
 ## Table of Contents
 
 1. [Operating System Purpose](#operating-system-purpose)
-   - [Hardware Abstraction](#hardware-abstraction)
-   - [Multiplexing](#multiplexing)
-   - [Isolation](#isolation)
-   - [Sharing](#sharing)
-   - [Security](#security)
-   - [Performance Optimization](#performance-optimization)
-   - [Versatility](#versatility)
 2. [Challenges in OS Design](#challenges-in-os-design)
    - [Efficiency vs. Abstraction](#efficiency-vs-abstraction)
    - [Powerful vs. Simple APIs](#powerful-vs-simple-apis)
