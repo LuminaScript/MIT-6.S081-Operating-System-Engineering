@@ -17,18 +17,8 @@
 3. [OS Layers](#os-layers)
    - [User Applications](#user-applications)
    - [Kernel Services](#kernel-services)
-     - [Process Management](#process-management)
-     - [Memory Allocation](#memory-allocation)
-     - [File Systems](#file-systems)
-     - [Access Control](#access-control)
-     - [Additional Services](#additional-services)
    - [Hardware](#hardware)
 4. [System Calls (User Space API)](#system-calls-user-space-api)
-   - [`open`](#open)
-   - [`fork`](#fork)
-   - [`write`](#write)
-   - [`read`](#read)
-   - [`exec`](#exec)
 5. [Code Examples](#code-examples)
    - [Copy Input to Output (`copy.c`)](#1-copy-input-to-output-copyc)
    - [Echo Command (`echo.c`)](#2-echo-command-echoc)
@@ -90,73 +80,38 @@ Allowing system extensibility and customization without compromising security me
 ## OS Layers
 
 ### User Applications
-
 Programs and tools that users interact with directly, such as:
-
 - Text editors (`vi`)
 - Compilers (`gcc`)
 - Databases
 
 ### Kernel Services
-
 Core functionalities that manage system resources and provide services to applications:
-
-#### Process Management
-
-Handles the creation, scheduling, and termination of processes.
-
-#### Memory Allocation
-
-Manages system memory allocation and deallocation for processes.
-
-#### File Systems
-
-Controls file operations, including reading, writing, organizing files, and directories.
-
-#### Access Control
-
-Enforces security policies to restrict or grant access to system resources.
-
-#### Additional Services
-
-- User management
-- Inter-process communication (IPC)
-- Networking
-- Time management
-- Terminal handling
+- **Process Management**: Handles the creation, scheduling, and termination of processes.
+- **Memory Allocation**: Manages system memory allocation and deallocation for processes.
+- **File Systems**: Controls file operations, including reading, writing, organizing files, and directories.
+- **Access Control**: Enforces security policies to restrict or grant access to system resources.
+- **Additional Services**
+   - User management
+   - Inter-process communication (IPC)
+   - Networking
+   - Time management
+   - Terminal handling
 
 ### Hardware
-
 Physical components of the computer system:
-
 - CPU
 - RAM
 - Disk drives
 - Network interfaces
 
 ## System Calls (User Space API)
-
 System calls provide an interface for user applications to request services from the kernel.
-
-### `open`
-
-Opens a file and returns a file descriptor.
-
-### `fork`
-
-Creates a new process by duplicating the calling process.
-
-### `write`
-
-Writes data to a file descriptor.
-
-### `read`
-
-Reads data from a file descriptor.
-
-### `exec`
-
-Replaces the current process image with a new program.
+- `open`: Opens a file and returns a file descriptor.
+- `fork`: Creates a new process by duplicating the calling process.
+- `write`: Writes data to a file descriptor.
+- `read`: Reads data from a file descriptor.
+- `exec`: Replaces the current process image with a new program.
 
 ## Code Examples
 
