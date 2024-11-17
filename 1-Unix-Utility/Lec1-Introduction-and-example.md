@@ -359,9 +359,3 @@ int main() {
   exit(0);
 }
 ```
-
----
-
-# Summary
-
-This catalog provides a structured overview of fundamental operating system concepts, challenges in OS design, the layered architecture of operating systems, key system calls, and practical code examples illustrating these concepts. Understanding these elements is essential for system programming and for comprehending how applications interact with the underlying operating system.
