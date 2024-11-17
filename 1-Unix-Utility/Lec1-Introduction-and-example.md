@@ -27,34 +27,13 @@
 ---
 
 ## Operating System Purpose
-
-### Hardware Abstraction
-
-Simplifies complex hardware operations by providing standard interfaces to interact with hardware components.
-
-### Multiplexing
-
-Allows multiple processes to share hardware resources efficiently without conflicts.
-
-### Isolation
-
-Ensures that processes operate independently, preventing them from interfering with one another's execution.
-
-### Sharing
-
-Enables controlled access to resources among different processes or users.
-
-### Security
-
-Protects system integrity and user data from unauthorized access and vulnerabilities.
-
-### Performance Optimization
-
-Manages resources to maximize efficiency and system throughput.
-
-### Versatility
-
-Supports a wide range of applications and adapts to various use cases and hardware configurations.
+- **Hardware Abstraction**: Simplifies complex hardware operations by providing standard interfaces to interact with hardware components.
+- **Multiplexing**: Allows multiple processes to share hardware resources efficiently without conflicts.
+- **Isolation**: Ensures that processes operate independently, preventing them from interfering with one another's execution.
+- **Sharing**: Enables controlled access to resources among different processes or users.
+- **Security**: Protects system integrity and user data from unauthorized access and vulnerabilities.
+- **Performance Optimization**: Manages resources to maximize efficiency and system throughput.
+- **Versatility**: Supports a wide range of applications and adapts to various use cases and hardware configurations.
 
 ## Challenges in OS Design
 
