@@ -23,22 +23,22 @@
         - virtual memory
 
 ## 2. User/Kernel Mode
+### Modes of Operation
 Process has two mode of operation: user mode and kernel mode
-- user mode: upriviledged instruction (add, branch, sub, )
-- kernel mode: priviledged instruction (setting up page table, disable clock interrupts)
+- **user mode**: upriviledged instruction (`add`, `sub`)
+- **kernel mode**: priviledged instruction (setting up page table, disable clock interrupts)
 
-Virtual memory (memory isolation)
+### Virtual memory (memory isolation)
 - page table: virtual addr -> physical
 - process has own page table
 
-- what should run in kernel mode?
-    - monothlic kernel design
-        - run all lines in kernel mode
-    - micro-kernel design
-        - run few line possible in kernel mode
-            - FS (File System), Echo, VM System [USER]
-            - IPC, multiplexing, virtual memory [KERNEL]
-            - implementing using msg (jump in-out of kernel => performance issue)
+### what should run in kernel mode?
+**Monolithic Kernel:**
+- All services, including file systems and device drivers, operate in kernel mode.
+
+**Microkernel:**
+- **Kernel Mode**: Essential services like IPC, multiplexing, and virtual memory management.
+- **User Mode**: Non-essential services such as file systems and device drivers, communicating via IPC.
 
 ## 3. System Call
 ### Entering the Kernel
@@ -52,26 +52,28 @@ Virtual memory (memory isolation)
 - The kernel must treat all processes as potentially malicious.
 
 
-## how the kernel starts and runs the first process.
+### HOW the kernel starts and runs the first process.
+**1. Power-On & Boot**
+- System powers on and ROM-based boot loader loads the xv6 kernel into memory at `0x80000000` (I/O devices at `0x0:0x80000000`).
+- Execution starts at `_entry` (`0x80000000`) with machine-mode paging disabled.
 
-**1. Power-On & Boot**  
-- The system powers on, and a ROM-based boot loader loads the xv6 kernel into memory at `0x80000000`.  
-- Execution begins at `_entry` with machine-mode paging disabled.
+**2. `_entry`**
+- Initializes the stack (`stack0`) and sets the stack pointer (`sp`) to `stack0 + 4096` (stack grows downward).
+- Jumps to the `start()` function in C.
 
-**2. Kernel Entry & Stack Setup**  
-- `_entry` (in `entry.S`) sets up an initial stack (`stack0`) and jumps to `start()` in C.
+**3. `start()`**
+- **Machine Mode**: Configures key RISC-V registers (timer interrupts, privilege levels, etc.).
+- **Supervisor Mode**: Sets up `mret` to switch to supervisor mode and jumps to `main()`.
 
-**3. Machine Mode to Supervisor Mode**  
-- `start()` configures key RISC-V registers (timer interrupts, privilege levels, etc.), then uses `mret` to switch to supervisor mode and jump to `main()`.
+**4. `main()` & First Process**
+- `main()` (in `main.c`) initializes devices and subsystems, then calls `userinit()`.
+- `userinit()` creates the first user process, executing `initcode.S`.
 
-**4. `main()` & First Process**  
-- `main()` (in `main.c`) initializes devices and subsystems, then calls `userinit()`.  
-- `userinit()` creates the first user process, which runs `initcode.S`.
+**5. First System Call & `/init`**
+- In `initcode.S`, the process sets `SYS_EXEC` in `a7` and invokes `ecall`.
+- Kernel's `sys_exec()` handles the call, loading `/init` to replace the first process.
+- `/init` opens the console (file descriptors 0, 1, 2) and starts the shell, making the system ready for user commands.
 
-**5. First System Call & `/init`**  
-- In `initcode.S`, the process loads the `SYS_EXEC` call number into `a7` and invokes `ecall`.  
-- The kernel handles the system call (`sys_exec()`), loading `/init` to replace the first process.  
-- `/init` then opens the console (as file descriptors 0, 1, 2) and starts the shell. The system is ready to run user commands.
     
 ## Filesystem, User, and Kernel
 
