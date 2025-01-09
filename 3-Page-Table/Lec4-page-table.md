@@ -46,113 +46,46 @@
     - The guard page's invalid PTE (`PTE_V` unset) ensures that stack overflows cause an exception and kernel panic, protecting other kernel memory.  
 
 
-### Per-Process Address Space
+### Process Address Space
+![image](../img/process-address-space.png)
+- Each process has its own page table.
+- User memory from 0 to MAXVA.
+- `kalloc`: allocalte physical page, then adds PTE to process's page table
 
-- **Unique Page Tables:** Each process has its own page table.
-- **Switching:** Kernel updates the `satp` register to switch page tables during context switches.
-- **Memory Layout:**
-    - **User Space:** Starts at VA 0, allows heap growth without physical memory fragmentation.
-    - **Kernel Space:** Shared across all processes, includes trampoline and trapframe pages for safe transitions.
 
-### Address Space Arrangement Rationale
+## 3. Code Walkthrough
+### Page table data structure
+**pagetable_t**: Pointer to the root page table, representing kernel or per-process page tables.
+- **`walk`**:  Finds the page table entry (PTE) for a given virtual address by descending the 3-level page table. Allocates a new page-table page if needed and returns the PTE address.
+- **`mappages`**:  Maps a range of virtual addresses to corresponding physical addresses. Calls `walk` for each virtual address, sets up PTEs with appropriate permissions, and marks them valid.
+### Creating an address space in boot
+- **`kvminit`**:  
+  - Initializes the kernel’s page table by calling `kvmmake`.
+  - Sets up translations for kernel instructions, data, physical memory, and device memory.
+- **`kvmmake`**:  
+  - Allocates a root page-table page and calls `kvmmap` to set up required mappings.
+- **`proc_mapstacks`**:  
+  - Allocates kernel stacks for processes and maps them with stack-guard pages using `kvmmap`.
+- **`kvmmap`**:  
+  - Maps virtual to physical addresses for kernel memory ranges by calling `mappages`.
+- **`kvminithart`**:  
+  - Installs the kernel page table by writing the physical address of the root page-table page into the `satp` register.
+  - Executes the RISC-V `sfence.vma` instruction to flush the CPU’s TLB after reloading `satp`.
+- **`copyout` / `copyin`**:  
+  - Copy data between user space and kernel space, translating user virtual addresses to physical addresses.
+- **TLB flushing**:  
+  - Uses `sfence.vma` to flush the TLB after page table updates to prevent stale mappings.
+  - Potentially uses Address Space Identifiers (ASIDs) for selective TLB flushing (if supported). 
 
-- **Isolation:** User and kernel address spaces are separated to prevent unauthorized access.
-- **Efficiency:** Shared mappings (e.g., trampoline) simplify transitions and enhance security against attacks like Spectre.
-- **Flexibility:** Kernel can easily manage and access physical memory.
-
-### Kernel's Use of Virtual Memory
-
-- **Advantages:**
-    - Simplifies memory management by leveraging hardware support.
-    - Enables advanced features like marking text pages as executable but not writable.
-    - Facilitates debugging and security enhancements.
-
----
-
-## 4. Code Walkthrough
-
-### Kernel Address Space Setup (`kvmmap()`)
-
-- **Functionality:**
-    - Maps virtual addresses to physical addresses.
-    - Handles specific mappings like CLINT, PLIC, and kernel text.
-- **Key Questions:**
-    - Address space size and memory usage after initial mappings.
-    - Double mapping verification for trampoline.
-    - Behavior after setting the `satp` register and executing `sfence_vma()`.
-
-### Page Mapping (`mappages()` in `vm.c`)
-
-- **Arguments:**
-    - Top-level page directory, VA range, PA range, permissions.
-- **Process:**
-    - Align addresses to page boundaries.
-    - Iterate through each page-aligned address in the range.
-    - Use `walkpgdir` to find and modify PTEs.
-
-### Page Table Walker (`walk()` in `vm.c`)
-
-- **Functionality:**
-    - Simulates hardware page table traversal.
-    - Extracts relevant bits from VA to navigate through PD levels.
-    - Allocates new PD pages if necessary and updates PTEs.
-
-### Process Initialization (`procinit()` in `proc.c`)
-
-- **Tasks:**
-    - Allocates a page for each kernel stack.
-    - Sets up guard pages to protect against stack overflows.
-
-### User Address Space Setup
-
-- **Functions:**
-    - `allocproc()`: Allocates an empty top-level page table.
-    - `fork()`: Uses `uvmcopy()` to duplicate the address space.
-    - `exec()`: Replaces the process's page table with a new one via `uvmalloc` and `loadseg`.
-- **Key Questions:**
-    - Understanding specific page table entries and their purposes.
-
-### Heap Management (`sbrk(n)`)
-
-- **Process:**
-    - User calls `sbrk(n)` to allocate more heap memory.
-    - Kernel allocates physical memory and maps it into the process's address space.
-    - Updates the process size and returns the starting address of the new memory.
-
-### Process Growth (`growproc()` in `proc.c`)
-
-- **Functionality:**
-    - Handles increasing the process's memory size.
-    - Calls `uvmalloc()` to map new memory pages.
-    - Updates the `satp` register during context switches to reflect changes.
-
-### Memory Allocation (`uvmalloc()` in `vm.c`)
-
-- **Considerations:**
-    - Uses `PGROUNDUP` to align memory addresses.
-    - Interfaces with `mappages()` to establish new mappings.
-
----
-
-## 5. Additional Topics and Q&A
-
-### Indirection Benefits
-
-- **Physical Memory Flexibility:** Non-contiguous physical memory allocation.
-- **Advanced Features:** Lazy allocation, copy-on-write, and more.
-- **Upcoming Topics:** Exploration of additional VM techniques in future lectures.
-
-### Q&A Highlights
-
-- **Virtual Memory in Kernel:**
-    - Standard kernels use virtual memory for convenience, security, and leveraging hardware support.
-- **Page Table Size and Efficiency:**
-    - Three-level page tables optimize memory usage by allowing sparse mappings.
-- **Address Space Configuration:**
-    - Ensures isolation between user processes and the kernel, enhancing system stability and security.
-
----
-
-## Conclusion
-
-This lecture provided a comprehensive overview of virtual memory, focusing on how xv6 implements isolated address spaces using RISC-V's paging hardware. Key concepts include the structure and management of page tables, address space isolation, and the practical aspects of memory allocation and process management within xv6. Understanding these fundamentals is crucial for developing advanced operating system features and ensuring robust memory management.
+### Kernel Memory Management System Call  
+#### Heap Management (`sbrk(n)`)  
+- **Grow Memory**: `growproc` → `uvmalloc` → allocate physical memory (`kalloc`) → add PTE to user page table (`mappages`).  
+- **Shrink Memory**: `growproc` → `uvmdealloc` → `uvmunmap` (walk to unmap pages).  
+#### `exec`: Creates User Address Space  
+- **Open Binary**: Use `namei` to open the binary file, verify ELF header via magic number.  
+- **Allocate Address Space**: Create new user page table, allocate memory for ELF segments (`uvmalloc`).  
+- **Load ELF Segments**: Load segments using `loadseg`, zero-fill gaps between `filesz` and `memsz`.  
+- **Initialize Stack**: Allocate one stack page, copy arguments, set up stack with return PC, `argc`, and `argv`.  
+- **Error Handling**: On error, free new image, return -1; old image freed only after successful setup.  
+- **Commit New Image**: Install new page table, free old one after ensuring success.  
+- **Security Checks**: Validate ELF to prevent address overflows and ensure loading only affects process page table.  
